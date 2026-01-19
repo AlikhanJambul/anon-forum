@@ -1,0 +1,94 @@
+.post-card {
+  display: flex;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.post-card:hover {
+  border-color: #818384;
+}
+
+/* Левая колонка с голосованием */
+.vote-section {
+  width: 40px;
+  background-color: #161617;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 8px;
+  border-right: 1px solid var(--border-color);
+}
+
+.vote-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  padding: 2px;
+}
+
+.vote-btn:hover { color: var(--orange-reddit); }
+.vote-count { font-weight: bold; font-size: 0.9rem; margin: 4px 0; }
+
+/* Правая колонка с контентом */
+.content-section {
+  padding: 8px 12px;
+  flex: 1;
+}
+
+.post-meta {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.post-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  line-height: 1.2;
+}
+
+.post-text {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+/* Формы */
+.create-form {
+  background: var(--bg-card);
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.input-field {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  color: white;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.btn-primary {
+  background: var(--text-primary);
+  color: black;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.hover-danger:hover {
+  color: var(--danger) !important;
+  transition: color 0.2s;
+}

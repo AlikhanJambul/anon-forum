@@ -1,0 +1,81 @@
+/* src/styles/markdown.css */
+
+.markdown-content {
+  line-height: 1.6;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  word-wrap: break-word;
+}
+
+/* Ссылки */
+.markdown-content a {
+  color: var(--blue-reddit);
+  text-decoration: none;
+}
+.markdown-content a:hover {
+  text-decoration: underline;
+}
+
+/* Параграфы */
+.markdown-content p {
+  margin-bottom: 10px;
+}
+
+/* Заголовки */
+.markdown-content h1, 
+.markdown-content h2, 
+.markdown-content h3 {
+  margin-top: 20px;
+  margin-bottom: 10px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+/* Списки */
+.markdown-content ul, 
+.markdown-content ol {
+  padding-left: 20px;
+  margin-bottom: 10px;
+}
+
+/* Цитаты */
+.markdown-content blockquote {
+  border-left: 4px solid var(--border-color);
+  margin: 10px 0;
+  padding-left: 16px;
+  color: var(--text-secondary);
+}
+
+/* Код внутри строки (например `const`) */
+.markdown-content code {
+  background-color: #2d2d2f;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.85em;
+  color: #ff7b72; /* Цвет как в VS Code dark */
+}
+
+/* Блоки кода */
+.markdown-content pre {
+  background-color: #161618;
+  padding: 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  margin: 10px 0;
+}
+
+.markdown-content pre code {
+  background-color: transparent;
+  padding: 0;
+  color: var(--text-primary);
+  font-size: 0.9em;
+}
+
+/* Картинки */
+.markdown-content img {
+  max-width: 100%;
+  border-radius: 8px;
+  margin: 10px 0;
+}

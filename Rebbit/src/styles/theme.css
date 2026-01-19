@@ -1,0 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --bg-body: #030303;
+  --bg-card: #1a1a1b;
+  --bg-input: #272729;
+  --border-color: #343536;
+  --text-primary: #d7dadc;
+  --text-secondary: #818384;
+  --accent-color: #d7dadc;
+  --orange-reddit: #ff4500;
+  --danger: #ff585b; /* Цвет для опасных действий */
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-body);
+  color: var(--text-primary);
+  /* Обновляем шрифт на Inter */
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
