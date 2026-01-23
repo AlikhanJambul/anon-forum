@@ -8,14 +8,13 @@ import { ConfirmationModal } from '../common/ConfirmationModal';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import '../../styles/post.css';
-import '../../styles/markdown.css'; // Убедись, что этот файл существует
+import '../../styles/markdown.css';
 
 interface PostCardProps {
   post: Post;
   isPreview?: boolean;
 }
 
-// Простая функция для цветов категорий (можно вынести отдельно, но так проще)
 const getCategoryColor = (cat: string) => {
   switch (cat) {
     case 'Discussion': return '#7193ff';
@@ -42,7 +41,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, isPreview = true }) =>
     alert('Ссылка скопирована! 🔗');
   };
 
-  // Для превью обрезаем текст, если он слишком длинный
   const contentToRender = isPreview 
     ? (post.content.length > 300 ? post.content.substring(0, 300) + '...' : post.content)
     : post.content;

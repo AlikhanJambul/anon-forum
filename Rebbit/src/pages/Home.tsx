@@ -4,7 +4,6 @@ import { PostCard } from '../components/post/PostCard';
 import { Flame, Clock, TrendingUp, PenSquare } from 'lucide-react';
 import '../styles/post.css';
 
-// Конфигурация категорий
 const CATEGORIES = [
   { id: 'Discussion', label: 'Обсуждение', color: '#7193ff' },
   { id: 'Meme', label: 'Мем', color: '#ff4500' },
@@ -18,42 +17,39 @@ type SortType = 'new' | 'top' | 'hot';
 export const Home = () => {
   const { posts, addPost } = usePosts();
   
-  // Состояния
   const [isCreating, setIsCreating] = useState(false);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [category, setCategory] = useState(CATEGORIES[0].id); // Выбранная категория
+  const [category, setCategory] = useState(CATEGORIES[0].id);
   const [sortBy, setSortBy] = useState<SortType>('new');
+  const [errors, setErrors] = useState({ title: false, content: false });
 
-  // Логика сортировки
   const sortedPosts = [...posts].sort((a, b) => {
-    if (sortBy === 'new') {
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    }
-    if (sortBy === 'top') {
-      return b.upvotes - a.upvotes;
-    }
-    if (sortBy === 'hot') {
-      return b.upvotes - a.upvotes; 
-    }
+    if (sortBy === 'new') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    if (sortBy === 'top' || sortBy === 'hot') return b.upvotes - a.upvotes;
     return 0;
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !content.trim()) return;
     
-    // Передаем 3 параметра: заголовок, текст, категория
+    const newErrors = {
+      title: !title.trim(),
+      content: !content.trim()
+    };
+    setErrors(newErrors);
+
+    if (newErrors.title || newErrors.content) return;
+    
     addPost(title, content, category);
     
-    // Сброс формы
     setTitle('');
     setContent('');
     setCategory(CATEGORIES[0].id);
     setIsCreating(false);
+    setErrors({ title: false, content: false });
   };
 
-  // Стили для кнопок сортировки
   const sortBtnStyle = (type: SortType) => ({
     background: sortBy === type ? '#272729' : 'transparent',
     border: 'none',
@@ -70,73 +66,90 @@ export const Home = () => {
 
   return (
     <div>
-      {/* Форма создания поста */}
-      {!isCreating ? (
-        <div className="create-form" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-           <div style={{ background: '#343536', borderRadius: '50%', padding: '8px' }}>
-              <PenSquare size={24} />
-           </div>
+      {/* ЕДИНАЯ ФОРМА (чтобы не терялся фокус при вводе) */}
+      <form onSubmit={handleSubmit} className="create-form" style={{ position: 'relative' }}>
+        
+        {/* Верхняя часть с заголовком (Видна всегда) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: isCreating ? '15px' : '0' }}>
+           {!isCreating && (
+             <div style={{ background: '#343536', borderRadius: '50%', padding: '8px', flexShrink: 0 }}>
+                <PenSquare size={24} />
+             </div>
+           )}
+           
            <input 
-             className="input-field" 
-             style={{ margin: 0, cursor: 'text' }}
-             placeholder="Создать анонимный пост..." 
-             onClick={() => setIsCreating(true)}
-             readOnly
+             className={`input-field ${errors.title ? 'input-error' : ''}`} 
+             placeholder="Заголовок" 
+             value={title} 
+             onFocus={() => setIsCreating(true)} 
+             onChange={e => {
+               setTitle(e.target.value);
+               if (errors.title) setErrors(prev => ({ ...prev, title: false })); 
+             }}
+             style={{ width: '100%' }}
            />
         </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="create-form">
-          <input 
-            className="input-field" 
-            placeholder="Заголовок" 
-            value={title} 
-            onChange={e => setTitle(e.target.value)}
-            autoFocus 
-          />
 
-          {/* Выбор категории */}
-          <div style={{ marginBottom: '15px', display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '5px' }}>
-            {CATEGORIES.map(cat => (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setCategory(cat.id)}
-                style={{
-                  background: category === cat.id ? cat.color : '#272729',
-                  color: category === cat.id ? '#000' : '#818384',
-                  border: category === cat.id ? `1px solid ${cat.color}` : '1px solid #343536',
-                  borderRadius: '15px',
-                  padding: '6px 14px',
-                  fontSize: '0.85rem',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-              >
-                {cat.label}
-              </button>
-            ))}
+        {/* Раскрывающаяся часть (Категории, Текст, Кнопки) */}
+        {isCreating && (
+          <div className="expandable-content">
+             {/* Выбор категории */}
+             <div style={{ marginBottom: '15px', display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '5px' }}>
+               {CATEGORIES.map(cat => (
+                 <button
+                   key={cat.id}
+                   type="button"
+                   onClick={() => setCategory(cat.id)}
+                   style={{
+                     background: category === cat.id ? cat.color : '#272729',
+                     color: category === cat.id ? '#000' : '#818384',
+                     border: category === cat.id ? `1px solid ${cat.color}` : '1px solid #343536',
+                     borderRadius: '15px',
+                     padding: '6px 14px',
+                     fontSize: '0.85rem',
+                     fontWeight: 'bold',
+                     cursor: 'pointer',
+                     transition: 'all 0.2s',
+                     whiteSpace: 'nowrap'
+                   }}
+                 >
+                   {cat.label}
+                 </button>
+               ))}
+             </div>
+
+             <textarea 
+               className={`input-field ${errors.content ? 'input-error' : ''}`} 
+               placeholder="Текст (Markdown поддерживается!)" 
+               value={content} 
+               onChange={e => {
+                 setContent(e.target.value);
+                 if (errors.content) setErrors(prev => ({ ...prev, content: false }));
+               }}
+               style={{ minHeight: '120px', resize: 'vertical', width: '100%', boxSizing: 'border-box' }}
+               autoFocus 
+             />
+
+             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+               <button 
+                 type="button" 
+                 className="btn-primary" 
+                 style={{ background: 'transparent', color: '#fff', border: '1px solid #343536' }} 
+                 onClick={() => {
+                   setIsCreating(false);
+                   setErrors({ title: false, content: false });
+                 }}
+               >
+                 Отмена
+               </button>
+               <button type="submit" className="btn-primary">Опубликовать</button>
+             </div>
           </div>
-
-          <textarea 
-            className="input-field" 
-            placeholder="Текст (Markdown поддерживается!)" 
-            value={content} 
-            onChange={e => setContent(e.target.value)}
-            style={{ minHeight: '120px', resize: 'vertical' }}
-          />
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-            <button type="button" className="btn-primary" style={{ background: 'transparent', color: '#fff', border: '1px solid #fff' }} onClick={() => setIsCreating(false)}>
-              Отмена
-            </button>
-            <button type="submit" className="btn-primary">Опубликовать</button>
-          </div>
-        </form>
-      )}
+        )}
+      </form>
 
       {/* Панель сортировки */}
-      <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center' }}>
+      <div style={{ marginBottom: '15px', marginTop: '20px', display: 'flex', alignItems: 'center' }}>
         <button onClick={() => setSortBy('hot')} style={sortBtnStyle('hot')}>
            <Flame size={18} /> Hot
         </button>
@@ -151,9 +164,7 @@ export const Home = () => {
       {/* Лента постов */}
       <div className="feed">
         {sortedPosts.length > 0 ? (
-          sortedPosts.map(post => (
-            <PostCard key={post.id} post={post} />
-          ))
+          sortedPosts.map(post => <PostCard key={post.id} post={post} />)
         ) : (
           <div style={{ textAlign: 'center', padding: '40px', color: '#818384' }}>
             Здесь пока пусто... Станьте первым! 👻
