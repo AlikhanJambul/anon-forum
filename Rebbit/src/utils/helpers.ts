@@ -16,3 +16,9 @@ export const formatDate = (dateString: string): string => {
     minute: '2-digit'
   });
 };
+
+export const getAvatarUrl = (username: string): string => {
+  // Кодируем имя, чтобы использовать в URL
+  const seed = encodeURIComponent(username);
+  return `https://api.dicebear.com/7.x/bottts/svg?seed=${seed}&backgroundColor=transparent`;
+};

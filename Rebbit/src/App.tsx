@@ -3,6 +3,7 @@ import { PostProvider } from './context/PostContext';
 import { Navbar } from './components/layout/Navbar';
 import { Home } from './pages/Home';
 import { PostDetail } from './pages/PostDetail';
+import { Toaster } from 'react-hot-toast'; 
 
 // Импорт глобальных стилей
 import './styles/theme.css';
@@ -22,6 +23,12 @@ function App() {
             </Routes>
           </main>
         </div>
+        <Toaster position="bottom-center" toastOptions={{
+          style: {
+            background: '#333',
+            color: '#fff',
+          },
+        }}/>
       </Router>
     </PostProvider>
   );

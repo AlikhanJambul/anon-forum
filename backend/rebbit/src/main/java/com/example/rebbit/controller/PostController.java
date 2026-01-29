@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PutMapping;
 
 import java.util.List;
 
@@ -29,6 +30,13 @@ public class PostController {
     public List<Post> getAllPosts() {
         logger.info("Fetching all posts sorted by creation date");
         return postRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
+    }
+
+    @GetMapping("/search")
+    public List<Post> searchPosts(@RequestParam String query) {
+        logger.info("Searching posts with query: {}", query);
+        // Ищем и по заголовку, и по тексту
+        return postRepository.findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(query, query);
     }
 
     @PostMapping
@@ -56,12 +64,35 @@ public class PostController {
 
     @PatchMapping("/{postId}/vote")
     public Post votePost(@PathVariable String postId, @RequestParam int value) {
+        // ЗАЩИТА: Разрешаем только +1 или -1
+        if (value != 1 && value != -1) {
+            throw new RuntimeException("Vote value must be 1 or -1");
+        }
+
         logger.info("Voting on post id: {} with value: {}", postId, value);
         Post post = postRepository.findById(postId).orElseThrow(() -> {
             logger.error("Post with id {} not found for voting", postId);
             return new RuntimeException("Post not found");
         });
+
         post.setUpvotes(post.getUpvotes() + value);
         return postRepository.save(post);
+    }
+
+    @PutMapping("/{postId}")
+    public Post updatePost(@PathVariable String postId, @RequestBody Post updatedPostData) {
+        logger.info("Updating post id: {}", postId);
+        return postRepository.findById(postId)
+                .map(post -> {
+                    post.setTitle(updatedPostData.getTitle());
+                    post.setContent(updatedPostData.getContent());
+                    // Можно добавить логику, чтобы обновлять дату:
+                    // post.setCreatedAt(java.time.LocalDateTime.now());
+                    return postRepository.save(post);
+                })
+                .orElseThrow(() -> {
+                    logger.error("Post with id {} not found for update", postId);
+                    return new RuntimeException("Post not found");
+                });
     }
 }
