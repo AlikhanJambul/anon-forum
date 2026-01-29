@@ -1,5 +1,6 @@
-package com.example.rebbit.controller;
+package com.example.rebbit;
 
+import com.example.rebbit.controller.PostController;
 import com.example.rebbit.model.Comment;
 import com.example.rebbit.model.Post;
 import com.example.rebbit.repository.CommentRepository;
@@ -125,11 +126,10 @@ class PostControllerTest {
 
         when(postRepository.findById(postId)).thenReturn(Optional.empty());
 
-        // Ожидаем ошибку, так как controller кидает RuntimeException через orElseThrow
         mockMvc.perform(post("/api/posts/{postId}/comments", postId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(comment)))
-                .andExpect(status().is5xxServerError()); // По умолчанию Spring без @ExceptionHandler вернет 500
+                .andExpect(status().isNotFound()); // ТЕПЕРЬ ОЖИДАЕМ 404
     }
 
     // Тест 7: Голосование за пост (Лайк)
@@ -174,7 +174,7 @@ class PostControllerTest {
 
         mockMvc.perform(patch("/api/posts/{postId}/vote", postId)
                         .param("value", "1"))
-                .andExpect(status().is5xxServerError());
+                .andExpect(status().isNotFound()); // ТЕПЕРЬ ОЖИДАЕМ 404
     }
 
     // Тест 10: Проверка сериализации JSON при добавлении поста
