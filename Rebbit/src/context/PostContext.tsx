@@ -2,10 +2,11 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from '
 import type { Post } from '../types';
 import { generateId, generateAnonName } from '../utils/helpers';
 
-// 1. Описываем, что умеет наш контекст
 interface PostContextType {
   posts: Post[];
-  addPost: (title: string, content: string, category: string) => void; // <--- Обновили тут (category)
+  searchQuery: string; // <--- Новое: строка поиска
+  setSearchQuery: (query: string) => void; // <--- Новое: функция изменения
+  addPost: (title: string, content: string, category: string) => void;
   deletePost: (id: string) => void;
   addComment: (postId: string, text: string) => void;
   votePost: (postId: string, value: number) => void;
@@ -14,7 +15,6 @@ interface PostContextType {
 
 const PostContext = createContext<PostContextType | undefined>(undefined);
 
-// 2. Функция загрузки из LocalStorage
 const getInitialPosts = (): Post[] => {
   const saved = localStorage.getItem('rebbit_posts');
   if (saved) {
@@ -40,20 +40,19 @@ const getInitialPosts = (): Post[] => {
 
 export const PostProvider = ({ children }: { children: ReactNode }) => {
   const [posts, setPosts] = useState<Post[]>(getInitialPosts);
+  const [searchQuery, setSearchQuery] = useState(''); // <--- Стейт поиска
 
-  // 3. Сохраняем в LocalStorage при каждом изменении
   useEffect(() => {
     localStorage.setItem('rebbit_posts', JSON.stringify(posts));
   }, [posts]);
 
-  // 4. Добавляем пост (принимаем category)
   const addPost = (title: string, content: string, category: string) => {
     const newPost: Post = {
       id: generateId(),
       title,
       content,
       author: generateAnonName(),
-      category, // Сохраняем категорию
+      category,
       upvotes: 0,
       comments: [],
       createdAt: new Date().toISOString(),
@@ -91,10 +90,11 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
 
   const getPost = (id: string) => posts.find(p => p.id === id);
 
-  // 5. ВОТ ТВОЙ ВОПРОС: Передаем всё это в value
   return (
     <PostContext.Provider value={{ 
       posts, 
+      searchQuery,    // <--- Передаем
+      setSearchQuery, // <--- Передаем
       addPost, 
       deletePost, 
       addComment, 
