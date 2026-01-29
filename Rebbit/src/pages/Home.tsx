@@ -4,6 +4,8 @@ import { PostCard } from '../components/post/PostCard';
 import { Flame, Clock, TrendingUp, PenSquare } from 'lucide-react';
 import '../styles/post.css';
 
+
+
 const CATEGORIES = [
   { id: 'Discussion', label: 'Обсуждение', color: '#7193ff' },
   { id: 'Meme', label: 'Мем', color: '#ff4500' },
@@ -15,7 +17,7 @@ const CATEGORIES = [
 type SortType = 'new' | 'top' | 'hot';
 
 export const Home = () => {
-  const { posts, addPost } = usePosts();
+  const { posts, isLoading, addPost } = usePosts();
   
   const [isCreating, setIsCreating] = useState(false);
   const [title, setTitle] = useState('');
@@ -23,14 +25,24 @@ export const Home = () => {
   const [category, setCategory] = useState(CATEGORIES[0].id);
   const [sortBy, setSortBy] = useState<SortType>('new');
   const [errors, setErrors] = useState({ title: false, content: false });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  if (isLoading) {
+    return (
+      <div className="loading-container">
+        <div className="spinner"></div> 
+        <p>Loading posts from database...</p>
+      </div>
+    );
+  }
+  
   const sortedPosts = [...posts].sort((a, b) => {
     if (sortBy === 'new') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     if (sortBy === 'top' || sortBy === 'hot') return b.upvotes - a.upvotes;
     return 0;
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const newErrors = {
@@ -41,13 +53,22 @@ export const Home = () => {
 
     if (newErrors.title || newErrors.content) return;
     
-    addPost(title, content, category);
-    
-    setTitle('');
-    setContent('');
-    setCategory(CATEGORIES[0].id);
-    setIsCreating(false);
-    setErrors({ title: false, content: false });
+    setIsSubmitting(true);
+    try {
+      // Wait for the Java backend to respond
+      await addPost(title, content, category);
+      
+      // Only clear the form if the request was successful
+      setTitle('');
+      setContent('');
+      setCategory(CATEGORIES[0].id);
+      setIsCreating(false);
+      setErrors({ title: false, content: false });
+    } catch (err) {
+      console.error("Failed to create post:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const sortBtnStyle = (type: SortType) => ({
