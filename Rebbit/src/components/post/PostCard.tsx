@@ -8,14 +8,13 @@ import { ConfirmationModal } from '../common/ConfirmationModal';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import '../../styles/post.css';
-import '../../styles/markdown.css'; // Убедись, что этот файл существует
+import '../../styles/markdown.css';
 
 interface PostCardProps {
   post: Post;
   isPreview?: boolean;
 }
 
-// Простая функция для цветов категорий (можно вынести отдельно, но так проще)
 const getCategoryColor = (cat: string) => {
   switch (cat) {
     case 'Discussion': return '#7193ff';
@@ -42,10 +41,14 @@ export const PostCard: React.FC<PostCardProps> = ({ post, isPreview = true }) =>
     alert('Ссылка скопирована! 🔗');
   };
 
-  // Для превью обрезаем текст, если он слишком длинный
-  const contentToRender = isPreview 
-    ? (post.content.length > 300 ? post.content.substring(0, 300) + '...' : post.content)
-    : post.content;
+  // --- ИСПРАВЛЕНИЕ: ПРИНУДИТЕЛЬНО ПРЕВРАЩАЕМ В СТРОКУ ---
+  // String(...) гарантирует, что даже если придет null, массив или число, это станет строкой.
+  const safeContent = String(post.content || '');
+
+  const contentToRender = isPreview
+    ? (safeContent.length > 300 ? safeContent.substring(0, 300) + '...' : safeContent)
+    : safeContent;
+  // -----------------------------------------------------
 
   return (
     <>
@@ -65,15 +68,15 @@ export const PostCard: React.FC<PostCardProps> = ({ post, isPreview = true }) =>
         <div className="content-section">
           <div className="post-meta" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              
+
               {/* Плашка категории */}
               {post.category && (
-                <span style={{ 
-                  backgroundColor: getCategoryColor(post.category), 
-                  color: '#000', 
-                  padding: '2px 8px', 
-                  borderRadius: '12px', 
-                  fontSize: '0.7rem', 
+                <span style={{
+                  backgroundColor: getCategoryColor(post.category),
+                  color: '#000',
+                  padding: '2px 8px',
+                  borderRadius: '12px',
+                  fontSize: '0.7rem',
                   fontWeight: 'bold',
                   display: 'inline-block'
                 }}>
@@ -84,7 +87,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, isPreview = true }) =>
               <span>Опубликовал <strong>{post.author}</strong> • {formatDate(post.createdAt)}</span>
             </div>
 
-            <button 
+            <button
               onClick={handleDeleteClick}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#818384', padding: 0 }}
               title="Удалить пост"
@@ -97,7 +100,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, isPreview = true }) =>
           {isPreview ? (
             <Link to={`/post/${post.id}`}>
               <h3 className="post-title">{post.title}</h3>
-              {/* Используем div для Markdown, чтобы избежать ошибок валидации DOM внутри ссылки */}
+              {/* Используем div для Markdown */}
               <div className="post-text markdown-content">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {contentToRender}
@@ -109,7 +112,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, isPreview = true }) =>
               <h1 className="post-title" style={{ fontSize: '1.4rem' }}>{post.title}</h1>
               <div className="post-text markdown-content">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {post.content}
+                  {safeContent}
                 </ReactMarkdown>
               </div>
             </>
@@ -117,8 +120,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post, isPreview = true }) =>
 
           <div style={{ marginTop: '12px', display: 'flex', gap: '15px', color: '#818384', fontSize: '0.8rem', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <MessageSquare size={16} /> 
-              {post.comments.length} Комментариев
+              <MessageSquare size={16} />
+              {post.comments?.length || 0} Комментариев
             </div>
             
             <div onClick={handleShare} style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }} className="hover-effect">

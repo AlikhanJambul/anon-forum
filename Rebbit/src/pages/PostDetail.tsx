@@ -4,7 +4,6 @@ import { usePosts } from '../context/PostContext';
 import { PostCard } from '../components/post/PostCard';
 import { formatDate } from '../utils/helpers';
 import { ArrowLeft, User, Send } from 'lucide-react';
-// Импортируем Markdown и стили
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import '../styles/post.css';
@@ -14,6 +13,7 @@ export const PostDetail = () => {
   const navigate = useNavigate();
   const { getPost, addComment } = usePosts();
   const [comment, setComment] = useState('');
+  const [error, setError] = useState(false);
 
   const post = getPost(id || '');
 
@@ -26,9 +26,14 @@ export const PostDetail = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!comment.trim()) return;
+    if (!comment.trim()) {
+      setError(true); 
+      return;
+    }
+
     addComment(post.id, comment);
     setComment('');
+    setError(false);
   };
 
   return (
@@ -51,10 +56,13 @@ export const PostDetail = () => {
 
         <form onSubmit={handleSubmit} style={{ position: 'relative' }}>
           <textarea 
-            className="input-field" 
-            placeholder="Оставьте свои мысли (Markdown поддерживается!)..." 
+            className={`input-field ${error ? 'input-error' : ''}`} 
+            placeholder="Оставьте свои мысли..." 
             value={comment}
-            onChange={e => setComment(e.target.value)}
+            onChange={e => {
+              setComment(e.target.value);
+              if (error) setError(false); 
+            }}
             style={{ minHeight: '100px', paddingRight: '50px' }} 
           />
           <button 
@@ -76,7 +84,7 @@ export const PostDetail = () => {
                         <span style={{ fontSize: '0.8rem', color: '#d7dadc', fontWeight: 'bold' }}>{c.author}</span>
                         <span style={{ fontSize: '0.8rem', color: '#818384' }}>• {formatDate(c.createdAt)}</span>
                     </div>
-                    {/* ВОТ ЗДЕСЬ ИЗМЕНЕНИЕ: Оборачиваем текст в Markdown */}
+                    {/*Оборачиваем текст в Markdown*/}
                     <div className="markdown-content" style={{ paddingLeft: '28px', color: '#d7dadc' }}>
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
                         {c.text}
