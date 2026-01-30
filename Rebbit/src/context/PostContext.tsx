@@ -1,19 +1,24 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import toast from 'react-hot-toast'; // <-- Импорт toast
+import toast from 'react-hot-toast';
 import type { Post } from '../types';
 import { generateAnonName, generateId } from '../utils/helpers';
 
+// Убедитесь, что порт совпадает с вашим backend (8080 или 8081)
 const API_URL = 'http://localhost:8080/api/posts';
+const API_BASE = 'http://localhost:8080'; // Для загрузки картинок
 
 interface PostContextType {
   posts: Post[];
-  addPost: (title: string, content: string, category: string) => Promise<void>;
+  // Обновили сигнатуры: добавили imageUrl
+  addPost: (title: string, content: string, category: string, imageUrl?: string) => Promise<void>;
   deletePost: (id: string) => Promise<void>;
-  updatePost: (id: string, title: string, content: string) => Promise<void>; // <-- НОВОЕ
-  addComment: (postId: string, text: string) => Promise<void>;
+  updatePost: (id: string, title: string, content: string) => Promise<void>;
+  addComment: (postId: string, text: string, imageUrl?: string) => Promise<void>;
   votePost: (postId: string, value: number) => Promise<void>;
   getPost: (id: string) => Post | undefined;
   searchPosts: (query: string) => Promise<Post[]>;
+  // Новая функция загрузки
+  uploadImage: (file: File) => Promise<string | null>;
 }
 
 const PostContext = createContext<PostContextType | undefined>(undefined);
@@ -37,7 +42,34 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addPost = async (title: string, content: string, category: string) => {
+  // --- ЗАГРУЗКА КАРТИНКИ ---
+  const uploadImage = async (file: File): Promise<string | null> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const toastId = toast.loading('Загрузка картинки...');
+    try {
+      const response = await fetch(`${API_BASE}/api/images/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (response.ok) {
+        const imageUrl = await response.text();
+        toast.success('Картинка загружена!', { id: toastId });
+        return imageUrl;
+      } else {
+        throw new Error('Upload failed');
+      }
+    } catch (error) {
+      console.error('Upload failed', error);
+      toast.error('Ошибка загрузки картинки', { id: toastId });
+      return null;
+    }
+  };
+
+  // --- СОЗДАНИЕ ПОСТА (с картинкой) ---
+  const addPost = async (title: string, content: string, category: string, imageUrl?: string) => {
     const toastId = toast.loading('Публикуем...');
     const newPost = {
       id: generateId(),
@@ -45,6 +77,7 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
       content,
       author: generateAnonName(),
       category,
+      imageUrl, // <-- Добавляем URL картинки
       upvotes: 0,
       createdAt: new Date().toISOString(),
       comments: []
@@ -69,11 +102,9 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // --- НОВАЯ ФУНКЦИЯ РЕДАКТИРОВАНИЯ ---
   const updatePost = async (id: string, title: string, content: string) => {
     const toastId = toast.loading('Сохранение...');
     try {
-      // Отправляем только то, что меняем (author, category и т.д. останутся старыми на бэке)
       const response = await fetch(`${API_URL}/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -103,11 +134,13 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addComment = async (postId: string, text: string) => {
+  // --- ДОБАВЛЕНИЕ КОММЕНТАРИЯ (с картинкой) ---
+  const addComment = async (postId: string, text: string, imageUrl?: string) => {
     const newComment = {
       id: generateId(),
       text,
       author: generateAnonName(),
+      imageUrl, // <-- Добавляем URL картинки
       createdAt: new Date().toISOString()
     };
 
@@ -138,8 +171,7 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
         setPosts(prev => prev.map(post => post.id === postId ? updatedPost : post));
       }
     } catch (error) {
-     // Голосование обычно тихое, ошибку можно не показывать тостом, только в консоль
-     console.error('Vote error', error);
+      console.error('Vote error', error);
     }
   };
 
@@ -163,11 +195,12 @@ export const PostProvider = ({ children }: { children: ReactNode }) => {
       posts, 
       addPost, 
       deletePost, 
-      updatePost, // <-- Добавили в провайдер
+      updatePost,
       addComment, 
       votePost, 
       getPost,
-      searchPosts
+      searchPosts,
+      uploadImage // Экспортируем функцию
     }}>
       {children}
     </PostContext.Provider>

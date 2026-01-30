@@ -11,6 +11,7 @@ public class Comment {
     private String text;
     private String author;
     private String createdAt;
+    private String imageUrl;
 
     @ManyToOne
     @JoinColumn(name = "post_id")
@@ -24,6 +25,9 @@ public class Comment {
 
     public String getText() { return text; }
     public void setText(String text) { this.text = text; }
+
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
     public String getAuthor() { return author; }
     public void setAuthor(String author) { this.author = author; }

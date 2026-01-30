@@ -4,6 +4,7 @@ export interface Comment {
   text: string;
   author: string; // Например, "Anon #4521"
   createdAt: string;
+  imageUrl?: string;
 }
 
 export interface Post {
@@ -15,4 +16,5 @@ export interface Post {
   upvotes: number;
   comments: Comment[];
   createdAt: string;
+  imageUrl?: string;
 }

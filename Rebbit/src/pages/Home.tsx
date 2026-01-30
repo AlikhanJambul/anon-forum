@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { usePosts } from '../context/PostContext';
 import { PostCard } from '../components/post/PostCard';
-import { Flame, Clock, TrendingUp, PenSquare } from 'lucide-react';
+import { Flame, Clock, TrendingUp, PenSquare, Image as ImageIcon, X } from 'lucide-react';
+import toast from 'react-hot-toast';
 import '../styles/post.css';
 
 // Конфигурация категорий
@@ -16,14 +17,22 @@ const CATEGORIES = [
 type SortType = 'new' | 'top' | 'hot';
 
 export const Home = () => {
-  const { posts, addPost } = usePosts();
+  const { posts, addPost, uploadImage } = usePosts();
   
-  // Состояния
+  // Состояния формы
   const [isCreating, setIsCreating] = useState(false);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [category, setCategory] = useState(CATEGORIES[0].id); // Выбранная категория
+  const [category, setCategory] = useState(CATEGORIES[0].id);
   const [sortBy, setSortBy] = useState<SortType>('new');
+  
+  // Состояния для фото
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // --- НОВОЕ: Состояние для ошибок (чтобы трясти поля) ---
+  const [errors, setErrors] = useState({ title: false, content: false });
 
   // Логика сортировки
   const sortedPosts = [...posts].sort((a, b) => {
@@ -39,21 +48,64 @@ export const Home = () => {
     return 0;
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim() || !content.trim()) return;
-    
-    // Передаем 3 параметра: заголовок, текст, категория
-    addPost(title, content, category);
-    
-    // Сброс формы
-    setTitle('');
-    setContent('');
-    setCategory(CATEGORIES[0].id);
-    setIsCreating(false);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Файл слишком большой (макс 5MB)');
+        return;
+      }
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
   };
 
-  // Стили для кнопок сортировки
+  const handleRemoveImage = () => {
+    setSelectedFile(null);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // --- ПРОВЕРКА НА ПУСТЫЕ ПОЛЯ ---
+    const newErrors = {
+      title: !title.trim(),
+      content: !content.trim()
+    };
+
+    if (newErrors.title || newErrors.content) {
+      setErrors(newErrors);
+      // Если есть ошибки, прерываем отправку
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      let imageUrl = undefined;
+      if (selectedFile) {
+        const url = await uploadImage(selectedFile);
+        if (url) imageUrl = url;
+      }
+
+      await addPost(title, content, category, imageUrl);
+      
+      // Сброс формы
+      setTitle('');
+      setContent('');
+      setCategory(CATEGORIES[0].id);
+      handleRemoveImage();
+      setIsCreating(false);
+      setErrors({ title: false, content: false }); // Сбрасываем ошибки
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const sortBtnStyle = (type: SortType) => ({
     background: sortBy === type ? '#272729' : 'transparent',
     border: 'none',
@@ -87,10 +139,15 @@ export const Home = () => {
       ) : (
         <form onSubmit={handleSubmit} className="create-form">
           <input 
-            className="input-field" 
+            // Добавляем класс input-error если errors.title === true
+            className={`input-field ${errors.title ? 'input-error' : ''}`} 
             placeholder="Заголовок" 
             value={title} 
-            onChange={e => setTitle(e.target.value)}
+            onChange={e => {
+              setTitle(e.target.value);
+              // Убираем красную обводку, когда пользователь начинает писать
+              if (errors.title) setErrors(prev => ({ ...prev, title: false }));
+            }}
             autoFocus 
           />
 
@@ -119,18 +176,77 @@ export const Home = () => {
           </div>
 
           <textarea 
-            className="input-field" 
+            // Добавляем класс input-error если errors.content === true
+            className={`input-field ${errors.content ? 'input-error' : ''}`} 
             placeholder="Текст (Markdown поддерживается!)" 
             value={content} 
-            onChange={e => setContent(e.target.value)}
+            onChange={e => {
+              setContent(e.target.value);
+              // Убираем красную обводку при вводе
+              if (errors.content) setErrors(prev => ({ ...prev, content: false }));
+            }}
             style={{ minHeight: '120px', resize: 'vertical' }}
           />
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-            <button type="button" className="btn-primary" style={{ background: 'transparent', color: '#fff', border: '1px solid #fff' }} onClick={() => setIsCreating(false)}>
-              Отмена
-            </button>
-            <button type="submit" className="btn-primary">Опубликовать</button>
+          {/* ПРЕДПРОСМОТР КАРТИНКИ */}
+          {previewUrl && (
+            <div style={{ marginBottom: '15px', position: 'relative', display: 'inline-block' }}>
+              <img 
+                src={previewUrl} 
+                alt="Preview" 
+                style={{ maxHeight: '200px', borderRadius: '8px', border: '1px solid #343536' }} 
+              />
+              <button 
+                type="button"
+                onClick={handleRemoveImage}
+                style={{
+                  position: 'absolute', top: '5px', right: '5px',
+                  background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%',
+                  color: 'white', cursor: 'pointer', padding: '4px', display: 'flex'
+                }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
+            
+            {/* Кнопка загрузки картинки */}
+            <label 
+              style={{ 
+                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', 
+                color: '#818384', padding: '5px', borderRadius: '5px' 
+              }}
+              className="hover-effect"
+            >
+              <ImageIcon size={20} />
+              <span style={{ fontSize: '0.9rem' }}>Фото</span>
+              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
+            </label>
+
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button 
+                type="button" 
+                className="btn-primary" 
+                style={{ background: 'transparent', color: '#fff', border: '1px solid #fff' }} 
+                onClick={() => {
+                  setIsCreating(false);
+                  setErrors({ title: false, content: false }); // Сбрасываем ошибки при отмене
+                }}
+                disabled={isSubmitting}
+              >
+                Отмена
+              </button>
+              <button 
+                type="submit" 
+                className="btn-primary"
+                disabled={isSubmitting}
+                style={{ opacity: isSubmitting ? 0.7 : 1 }}
+              >
+                {isSubmitting ? 'Публикация...' : 'Опубликовать'}
+              </button>
+            </div>
           </div>
         </form>
       )}

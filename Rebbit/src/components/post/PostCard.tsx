@@ -11,13 +11,13 @@ import {
   Send,
   MessageCircle,
   Twitter,
-  PenLine, // <-- Иконка редактирования
-  Save,    // <-- Иконка сохранения
-  X        // <-- Иконка отмены
+  PenLine, 
+  Save, 
+  X 
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import toast from 'react-hot-toast'; // <-- Импорт тостов
-import { formatDate, getAvatarUrl } from '../../utils/helpers'; // <-- Импорт хелпера аватарок
+import toast from 'react-hot-toast';
+import { formatDate, getAvatarUrl } from '../../utils/helpers';
 import { ConfirmationModal } from '../common/ConfirmationModal';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -40,18 +40,23 @@ const getCategoryColor = (cat: string) => {
   }
 };
 
+// Хелпер для получения полного URL картинки
+const getFullImageUrl = (url?: string) => {
+  if (!url) return null;
+  if (url.startsWith('http')) return url;
+  // Указываем порт вашего бэкенда (8080 или 8081, как в PostContext)
+  return `http://localhost:8080${url}`; 
+};
+
 export const PostCard: React.FC<PostCardProps> = ({ post, isPreview = true }) => {
-  // Достаем updatePost из контекста
   const { votePost, deletePost, updatePost } = usePosts(); 
   
   const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   
-  // --- Состояния для редактирования ---
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(post.title);
   const [editContent, setEditContent] = useState(post.content);
-  // ------------------------------------
 
   const shareRef = useRef<HTMLDivElement>(null);
 
@@ -65,7 +70,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, isPreview = true }) =>
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Синхронизируем состояние редактирования при изменении пропса post
   useEffect(() => {
     setEditTitle(post.title);
     setEditContent(post.content);
@@ -76,21 +80,18 @@ export const PostCard: React.FC<PostCardProps> = ({ post, isPreview = true }) =>
     setDeleteModalOpen(true);
   };
 
-  // Включение режима редактирования
   const handleEditClick = (e: React.MouseEvent) => {
     e.preventDefault();
     setIsEditing(true);
-    setShowShareMenu(false); // Закрываем меню шаринга, если открыто
+    setShowShareMenu(false);
   };
 
-  // Отмена редактирования
   const handleCancelEdit = () => {
     setIsEditing(false);
-    setEditTitle(post.title); // Сбрасываем к исходным значениям
+    setEditTitle(post.title);
     setEditContent(post.content);
   };
 
-  // Сохранение изменений
   const handleSaveEdit = async () => {
     if (!editTitle.trim() || !editContent.trim()) {
        toast.error("Заголовок и текст не могут быть пустыми");
@@ -106,7 +107,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, isPreview = true }) =>
   const handleCopyLink = () => {
     navigator.clipboard.writeText(shareUrl);
     setShowShareMenu(false);
-    toast.success('Ссылка скопирована в буфер! 🔗'); // <-- Красивый тост вместо alert
+    toast.success('Ссылка скопирована в буфер! 🔗');
   };
 
   const handleSocialShare = (platform: 'telegram' | 'whatsapp' | 'twitter') => {
@@ -131,6 +132,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post, isPreview = true }) =>
     ? (safeContent.length > 300 ? safeContent.substring(0, 300) + '...' : safeContent)
     : safeContent;
 
+  // Генерируем полный URL для картинки (если есть)
+  const fullImageUrl = getFullImageUrl(post.imageUrl);
+
   return (
     <>
       <div className="post-card">
@@ -141,17 +145,13 @@ export const PostCard: React.FC<PostCardProps> = ({ post, isPreview = true }) =>
         </div>
 
         <div className="content-section">
-          {/* Верхняя панель с метой и кнопками действий */}
           <div className="post-meta" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              
-              {/* АВАТАРКА */}
               <img 
                 src={getAvatarUrl(post.author)} 
                 alt={post.author}
                 style={{ width: '24px', height: '24px', borderRadius: '50%' }} 
               />
-
               {post.category && (
                 <span style={{
                   backgroundColor: getCategoryColor(post.category),
@@ -162,7 +162,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, isPreview = true }) =>
               <span>Is <strong>{post.author}</strong> • {formatDate(post.createdAt)}</span>
             </div>
 
-            {/* Кнопки Редактировать и Удалить (показываем только если не в режиме редактирования) */}
             {!isEditing && (
               <div style={{ display: 'flex', gap: '8px' }}>
                  <button onClick={handleEditClick} className="icon-btn hover-primary" title="Редактировать">
@@ -175,9 +174,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, isPreview = true }) =>
             )}
           </div>
 
-          {/* УСЛОВНЫЙ РЕНДЕРИНГ: Режим просмотра ИЛИ Режим редактирования */}
           {isEditing ? (
-            // --- РЕЖИМ РЕДАКТИРОВАНИЯ ---
             <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <input 
                 type="text"
@@ -207,10 +204,21 @@ export const PostCard: React.FC<PostCardProps> = ({ post, isPreview = true }) =>
               </div>
             </div>
           ) : (
-            // --- РЕЖИМ ПРОСМОТРА (Обычный) ---
             isPreview ? (
               <Link to={`/post/${post.id}`}>
                 <h3 className="post-title">{post.title}</h3>
+                
+                {/* --- ОТОБРАЖЕНИЕ КАРТИНКИ (ПРЕВЬЮ) --- */}
+                {fullImageUrl && (
+                  <div style={{ marginTop: '10px', marginBottom: '10px', borderRadius: '8px', overflow: 'hidden', maxHeight: '300px' }}>
+                    <img 
+                      src={fullImageUrl} 
+                      alt="Post attachment" 
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  </div>
+                )}
+
                 <div className="post-text markdown-content">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{contentToRender}</ReactMarkdown>
                 </div>
@@ -218,6 +226,18 @@ export const PostCard: React.FC<PostCardProps> = ({ post, isPreview = true }) =>
             ) : (
               <>
                 <h1 className="post-title" style={{ fontSize: '1.4rem' }}>{post.title}</h1>
+                
+                {/* --- ОТОБРАЖЕНИЕ КАРТИНКИ (ПОЛНАЯ) --- */}
+                {fullImageUrl && (
+                  <div style={{ marginTop: '15px', marginBottom: '15px', borderRadius: '8px', overflow: 'hidden' }}>
+                    <img 
+                      src={fullImageUrl} 
+                      alt="Post attachment" 
+                      style={{ maxWidth: '100%', display: 'block' }}
+                    />
+                  </div>
+                )}
+
                 <div className="post-text markdown-content">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{safeContent}</ReactMarkdown>
                 </div>
@@ -225,7 +245,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, isPreview = true }) =>
             )
           )}
 
-          {/* Футер с комментариями и шарингом (скрываем при редактировании) */}
           {!isEditing && (
             <div style={{ marginTop: '12px', display: 'flex', gap: '15px', color: '#818384', fontSize: '0.8rem', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
@@ -272,7 +291,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, isPreview = true }) =>
   );
 };
 
-// Стили для кнопок-иконок
 const iconButtonStyle: React.CSSProperties = {
   display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px',
   background: 'transparent', border: 'none', borderRadius: '4px', color: '#d7dadc', cursor: 'pointer', transition: 'background 0.2s',
